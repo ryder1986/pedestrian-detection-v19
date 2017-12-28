@@ -4,7 +4,10 @@
 #include "camera.h"
 int main(int argc, char *argv[])
 {
-    Tool1::set_debug_level(Tool1::DEBUG_LEVEL::INFO);
+    if(argc==2&&!strcmp(argv[1],"-trace"))
+    Tool1::set_debug_level(Tool1::DEBUG_LEVEL::DEBUG);
+    else
+           Tool1::set_debug_level(Tool1::DEBUG_LEVEL::INFO);
     QCoreApplication a(argc, argv);
     prt(info,"sever start");
     Server s;
