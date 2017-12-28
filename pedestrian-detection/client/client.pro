@@ -16,10 +16,12 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    client.cpp
+    client.cpp \
+    searchwidget.cpp
 
 HEADERS  += mainwindow.h \
-    client.h
+    client.h \
+    searchwidget.h
 unix{
 message(build $$TARGET on unix)
 INSTALL_PATH="/root/repo-github/install-pedestrian-detection"
@@ -40,5 +42,6 @@ INSTALLS=install_setting
 }
 
 FORMS += \
-    form.ui
+    form.ui \
+    searchwidget.ui
 

@@ -8,6 +8,7 @@
 #include "config.h"
 #include "videosrc.h"
 #include <QMenu>
+#include "searchwidget.h"
 using namespace std ;
 class VideoThread:public QObject{
 Q_OBJECT
@@ -171,6 +172,33 @@ private slots:
         // itm->setFlags(!Qt::ItemIsEditable | itm_root->flags()) ;
    //     p_item_device_current->setFlags(  p_item_device_current->flags() & ~Qt::ItemIsEditable) ;
     }
+public slots:
+    void get_ip(QString ip)
+    {
+          //  char buf[2000];
+      //   prt(info,"%s",str.toStdString().data());
+         if(ip.length()){
+             clt->connect_to_server(ip);
+
+             //if connect ok ,then continue;
+//             int request_length=Protocol::encode_configuration_request(buf);//encoder buffer
+//             QByteArray rst=clt->call_server(buf,request_length);//talk to server
+//             rst=rst.remove(0,Protocol::HEAD_LENGTH);//TODO:get the ret value
+             p_cfg->set_config( clt->get_config());
+
+             //handle tree list
+             window->treeWidget_devices->clear();
+             p_item_device_root=new QTreeWidgetItem(QStringList(clt->server_ip));
+             window->treeWidget_devices->addTopLevelItem(p_item_device_root);
+             for(int i=0;i<p_cfg->cfg.camera_amount;i++){
+                 QTreeWidgetItem *itm1=new QTreeWidgetItem(QStringList(p_cfg->cfg.camera[i].ip));
+                 p_item_device_root->addChild(itm1);
+             }
+         }else{
+             prt(info,"no server found");
+         }
+    }
+
 
 private:
     Ui::Form *window;
@@ -182,6 +210,7 @@ private:
     QTreeWidgetItem *p_item_device_current;
     int selected_camera_index;
     VideoThread *p_video_thread;
+    SearchWidget *search_widget;
 };
 
 #endif // MAINWINDOW_H

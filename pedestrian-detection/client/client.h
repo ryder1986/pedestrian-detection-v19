@@ -99,7 +99,7 @@ public slots:
             udp_skt_alg_output->readDatagram(datagram_rst.data(),datagram_rst.size());
             //        udp_skt_alg_output->readDatagram(sss,500);
             //          datagram_rst= udp_skt_alg_output->readAll();
-           #if 0
+#if 0
             QList <QByteArray > bl= datagram_rst.split(':');
             QByteArray b_index=bl[0];
             int index=*(b_index);
@@ -162,11 +162,18 @@ public:
         int ret=  in.readRawData((char *)buf,3);
         qDebug()<<QString::fromRawData((QChar *)buf,3);
     }
+    QByteArray get_config()
+    {
+        char buf[2000];
+        int request_length=Protocol::encode_configuration_request(buf);//encoder buffer
+        QByteArray rst= call_server(buf,request_length);//talk to server
+        return rst.remove(0,Protocol::HEAD_LENGTH);//TODO:get the ret value;
+    }
 
     QByteArray  call_server(char *buf,int len)
     {
         QByteArray ret;
-                ret.resize(0);
+        ret.resize(0);
         int write_bytes=0;
 
         write_bytes=tcp_socket->write(buf,len);

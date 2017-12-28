@@ -10,6 +10,9 @@ MainWindow::MainWindow(QWidget *parent)
     rst_rcver=new ServerOutputRst ;
     clt=new Client;
     p_video_thread=NULL;
+    search_widget=new SearchWidget;
+    connect(search_widget,SIGNAL(select_ip(QString)),this,SLOT(get_ip(QString)));
+
 }
 
 MainWindow::~MainWindow()
@@ -26,28 +29,36 @@ void MainWindow::on_pushButton_search_clicked()
         p_video_thread=NULL;
     }
 
-    char buf[2000];
+    search_widget->clear_text();
+    search_widget->show();
+
+
+  //  char buf[2000];
     searcher->search_device();
     QString ip=searcher->wait_server_info_reply(2);
-    if(ip.length()){
-        clt->connect_to_server(ip);
-        //if connect ok ,then continue;
-        int request_length=Protocol::encode_configuration_request(buf);//encoder buffer
-        QByteArray rst=clt->call_server(buf,request_length);//talk to server
-        rst=rst.remove(0,Protocol::HEAD_LENGTH);//TODO:get the ret value
-        p_cfg->set_config(rst);
 
-        //handle tree list
-        window->treeWidget_devices->clear();
-        p_item_device_root=new QTreeWidgetItem(QStringList(clt->server_ip));
-        window->treeWidget_devices->addTopLevelItem(p_item_device_root);
-        for(int i=0;i<p_cfg->cfg.camera_amount;i++){
-            QTreeWidgetItem *itm1=new QTreeWidgetItem(QStringList(p_cfg->cfg.camera[i].ip));
-            p_item_device_root->addChild(itm1);
-        }
-    }else{
-        prt(info,"no server found");
-    }
+    search_widget->add_text(ip);
+
+
+//    if(ip.length()){
+//        clt->connect_to_server(ip);
+//        //if connect ok ,then continue;
+//        int request_length=Protocol::encode_configuration_request(buf);//encoder buffer
+//        QByteArray rst=clt->call_server(buf,request_length);//talk to server
+//        rst=rst.remove(0,Protocol::HEAD_LENGTH);//TODO:get the ret value
+//        p_cfg->set_config(rst);
+
+//        //handle tree list
+//        window->treeWidget_devices->clear();
+//        p_item_device_root=new QTreeWidgetItem(QStringList(clt->server_ip));
+//        window->treeWidget_devices->addTopLevelItem(p_item_device_root);
+//        for(int i=0;i<p_cfg->cfg.camera_amount;i++){
+//            QTreeWidgetItem *itm1=new QTreeWidgetItem(QStringList(p_cfg->cfg.camera[i].ip));
+//            p_item_device_root->addChild(itm1);
+//        }
+//    }else{
+//        prt(info,"no server found");
+//    }
 }
 
 void MainWindow::on_treeWidget_devices_doubleClicked(const QModelIndex &index)
