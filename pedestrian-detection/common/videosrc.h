@@ -62,8 +62,10 @@ private:
             data->frame_wait_time=40;
         }
         Mat mat_rst;
+        int flag_retry=0;
         while(!data->quit_flag){
             if(data->p_cap){
+                flag_retry=0;
                 IplImage *img;
             //      prt(info,"get frame begin");
 //                  bool rt=data->vcap.read(mat_rst);
@@ -72,7 +74,7 @@ private:
                   img=cvQueryFrame(data->p_cap);
                    //      prt(info,"get frame done");
                 if(!img){
-                    prt(info,"get frame error,retry 1 seconds later");
+                    prt(info,"%s get frame error,retry 1 seconds later",data->url.data());
                     cvReleaseCapture(&data->p_cap);
                     this_thread::sleep_for(chrono::seconds(1));
                 }else{
@@ -85,10 +87,13 @@ private:
                         this_thread::sleep_for(chrono::milliseconds(data->frame_wait_time));
                 }
             }else{
-                prt(info,"create video cap 1 sec later");
-                //this_thread::sleep_for(chrono::seconds(1));
+                if(flag_retry++<10){
+                     this_thread::sleep_for(chrono::milliseconds(100));
+                }else{
+                     this_thread::sleep_for(chrono::seconds(10));
+                     prt(info,"retrying %s 10 sec later",data->url.data());
+                }
                 data->p_cap=cvCreateFileCapture(data->url.data());  //create video source
-
                 //   data->vcap=   VideoCapture(data->url.data());
                 data->width=cvGetCaptureProperty(data->p_cap,CV_CAP_PROP_FRAME_WIDTH);
                 data->height=cvGetCaptureProperty(data->p_cap,CV_CAP_PROP_FRAME_HEIGHT);

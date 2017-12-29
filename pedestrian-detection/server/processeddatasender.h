@@ -24,15 +24,16 @@ public:
         static ProcessedDataSender sender;
         return &sender;
     }
-    void send(QByteArray datagram)
+    void send(QByteArray datagram,const QHostAddress addr)
     {
 //        QByteArray datagram;
 //        datagram.clear();
 //        datagram.append("test");
+        prt(debug,"broadcast %s to port 12346",datagram.data());
         udp_skt->writeDatagram(datagram.data(), datagram.size(),
-                               QHostAddress::Broadcast, Protocol::SERVER_DATA_OUTPUT_PORT);
+                               addr, Protocol::SERVER_DATA_OUTPUT_PORT);
     }
-
+private:
     ProcessedDataSender(){
      //   timer=new QTimer();
       //  connect(timer,SIGNAL(timeout()),this,SLOT(check_client()));//TODO:maybe replace with readReady signal
@@ -46,7 +47,7 @@ public:
       //  delete timer;
         delete udp_skt;
     }
-    private:
+
 //    void start()
 //    {
 //        timer->start(1000);

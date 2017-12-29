@@ -25,7 +25,7 @@ class VideoProcessor
     Mat pedestrians;
 public:
     VideoProcessor();
-    bool work(Mat &mt,QByteArray &rst)
+    bool work(Mat &mt,QByteArray &rst,QString url=QString(""))
     {
 
         //     QByteArray rst_ba;
@@ -140,7 +140,7 @@ public:
                             //QString test_str=QString::number(test);
                             str.append(x_str).append(",").append(y_str).append(",").append(width_str).append(",").append(height_str).append(":");
                             rst.append(str.toStdString().data());
-                            prt(debug,"%s",rst.data());
+                            prt(debug,"%s process rst: %s",url.toStdString().data(), rst.data());
 
 //                            rst_ba.append(x_str.toStdString().data());
 //                            rst_ba.append(",");

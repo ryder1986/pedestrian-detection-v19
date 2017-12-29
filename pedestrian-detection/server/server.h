@@ -86,23 +86,41 @@ private:
 class ClientSession:public QObject{
     Q_OBJECT
 public:
-    ClientSession(QTcpSocket *client_skt):skt(client_skt){
+    ClientSession(QTcpSocket *client_skt):skt(client_skt),focus_index(0){
+
         connect(skt,SIGNAL(readyRead()),this,SLOT(handle_msg()));
         connect(skt,SIGNAL(disconnected()),this,SLOT(deleteLater()));
         connect(skt,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(socket_error()));
-        udp_skt=new QUdpSocket();
+     //   udp_skt=new QUdpSocket();
         client_addr=skt->peerAddress();
+        timer=new QTimer(this);
+        connect(timer,SIGNAL(timeout()),this,SLOT(check_output()));
+        timer->start(10);
         //  connect(skt,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(test()));
         //                connect(skt,SIGNAL(aboutToClose()),this,SLOT(test()));
         //                connect(skt,SIGNAL(disconnected()),this,SLOT(test()));
     }
     ~ClientSession()
     {
-        //    disconnect(timer,SIGNAL(timeout()),this,SLOT(send_rst_to_client()));
-        delete udp_skt;
+        delete timer;
+     //   //    disconnect(timer,SIGNAL(timeout()),this,SLOT(send_rst_to_client()));
+       // delete udp_skt;
     }
 
 public slots:
+    void check_output()
+    {
+        ProcessedDataSender *sender=ProcessedDataSender::get_instance();
+        CameraManager mgr=  CameraManager::GetInstance();
+        QByteArray ba;
+        if(focus_index){
+            //prt(info,"checking camera %d",focus_index);
+            if(mgr.try_get_data(focus_index-1,ba)){
+                sender->send(ba,client_addr);
+            }
+        }
+    }
+
     void socket_error()
     {
         emit socket_error(this);
@@ -152,10 +170,11 @@ public slots:
             prt(info,"modify cam %d ",cam_index);
             break;
         case Protocol::CAM_OUTPUT_OPEN:
-            prt(info,"open cam %d output",cam_index);
+            prt(info,"cam %d request output",cam_index);
             memcpy(dst_buf,src_buf,Protocol::HEAD_LENGTH);
             ret_size= Protocol::HEAD_LENGTH;
-            mgr.set_output(cam_index);
+            focus_index=cam_index;
+            //mgr.set_output(cam_index);
             break;
         default:
             break;
@@ -177,6 +196,11 @@ public slots:
 
         }
     }
+    QString ip()
+    {
+        return client_addr.toString();
+    }
+
 signals :
     int get_server_config(char *buf);
     void socket_error(ClientSession *c);
@@ -184,9 +208,10 @@ private:
     char *rcv_buf;
     char send_buf[Pd::BUFFER_LENGTH];
     QTcpSocket *skt;
-    QUdpSocket *udp_skt;
+  //  QUdpSocket *udp_skt;
     QTimer *timer;
     QHostAddress client_addr;
+    int focus_index;
 };
 /*
     server provide
@@ -230,12 +255,30 @@ public slots:
         prt(info,"client %s:%d connected",str.toStdString().data(),skt->peerPort());
         ClientSession *client=new ClientSession(skt);
         connect(client,SIGNAL(socket_error(ClientSession*)),this,SLOT(delete_client(ClientSession*)));
+        connect(skt,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(displayError(QAbstractSocket::SocketError)));
         clients.append(client);
     }
     void delete_client(ClientSession *c)
     {
+        prt(info,"client %s disconnected",c->ip().toStdString().data());
         delete c ;
         clients.removeOne(c);
+    }
+    void  displayError(QAbstractSocket::SocketError socketError)
+    {
+        prt(info,"err when connecting to server");
+        switch (socketError) {
+        case QAbstractSocket::RemoteHostClosedError:
+            break;
+        case QAbstractSocket::HostNotFoundError:
+            qDebug()<<"1";
+            break;
+        case QAbstractSocket::ConnectionRefusedError:
+            qDebug()<<"1";
+            break;
+        default:
+            qDebug()<<"1";
+        }
     }
 
 private:

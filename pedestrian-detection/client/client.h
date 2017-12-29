@@ -85,7 +85,7 @@ public:
         udp_skt_alg_output=new QUdpSocket(this);
         udp_skt_alg_output->bind(Protocol::SERVER_DATA_OUTPUT_PORT,QUdpSocket::ShareAddress);
         connect(udp_skt_alg_output,SIGNAL(readyRead()),this,SLOT(get_rst()));
-    }
+          }
 signals:
     void send_rst(QByteArray);
 public slots:
@@ -136,6 +136,8 @@ public:
         tcp_socket=new QTcpSocket();
         in.setDevice(tcp_socket);
         in.setVersion(QDataStream::Qt_1_0);
+        connect(tcp_socket,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(displayError(QAbstractSocket::SocketError)));
+
     }
     void pack_tcp_data(char *c,int length){
 
@@ -194,6 +196,7 @@ public slots:
     }
     void  displayError(QAbstractSocket::SocketError socketError)
     {
+        prt(info,"err when connecting to server");
         switch (socketError) {
         case QAbstractSocket::RemoteHostClosedError:
             break;
