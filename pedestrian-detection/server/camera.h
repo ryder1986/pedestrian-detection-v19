@@ -47,6 +47,7 @@ public:
             if(ret){
                 rst.clear();
                 p_data->p_worker->work(mt,rst,p_data->url);
+             //   this_thread::sleep_for(chrono::milliseconds(100));
                 //  rst.clear();rst.append(p_data->index);
                 //                if(p_data->output&&rst.length()){
                 //                    p_data->sender->send(rst);
@@ -54,7 +55,6 @@ public:
                 //                }
                 if(rst.length()>0){
                     p_data->lock.lock();
-
                     p_data->rst=rst;
                     p_data->lock.unlock();
                 }
@@ -108,7 +108,20 @@ signals:
 
 class CameraManager{
     int test_int;
+    mutex cfg_lock;
 public:
+    CameraManager(CameraManager &m)
+    {
+        prt(fatal,"copy is not supported now");
+        exit(1);
+#ifdef DISPLAY_VIDEO
+#ifdef IS_UNIX
+        XInitThreads();
+#endif
+#endif
+    //    p_cfg=new CameraConfiguration("config.json-server");
+    //    start_all();
+    }
 #if 1
     static CameraManager &GetInstance()
     {
@@ -130,14 +143,25 @@ private:
     }
 
 public:
+    int cam_num()
+    {
+        return cameras.size();
+    }
+
     bool try_get_data(int index,QByteArray &ba)
     {
+        bool ret=false;
+        cfg_lock.lock();
         ba=cameras[index]->get_rst();
         if(ba.length()){
-            return true;
+            ret= true;
+            prt(output_data,"sending cam %d rst",index);
         }else{
-            return false;
+            ret= false;
+            prt(error,"sending cam %d rst error",index);
         }
+        cfg_lock.unlock();
+        return ret;
     }
 
     void test()
@@ -235,32 +259,38 @@ public:
             i++;
         }
 
-    }*/    void add_camera(const char *cfg_buf)
+    }*/
+    void add_camera(const char *cfg_buf)
     {
+        cfg_lock.lock();
         p_cfg->set_config(cfg_buf);
         Camera *c=new Camera(p_cfg->cfg.camera[p_cfg->cfg.camera_amount-1]);
         //    cameras.push_back(c);
         cameras.append(c);
+        cfg_lock.unlock();
     }
     void del_camera(const char *cfg_buf,const int index)
     {
+        cfg_lock.lock();
         p_cfg->set_config(cfg_buf);
         delete cameras[index-1];
         cameras.removeAt(index-1);
+        cfg_lock.unlock();
     }
     void del_camera(const int index)
     {
-        // p_cfg->set_config(cfg_buf);
-
+        cfg_lock.lock();
         p_cfg->del_camera(index);
         Camera *cm=cameras[index-1];
         //   prt(info,"delete %s",cm->d.p_src->get_url());
         delete cm;//////////////////////////TODO
         cameras.removeAt(index-1);
+        cfg_lock.unlock();
         //   delete cm;
     }
     void mod_camera(const char *cfg_buf,const int index)
     {
+        cfg_lock.lock();
         p_cfg->set_config(cfg_buf);
         prt(info,"modify cam  %d",index);
         //        while(true){
@@ -271,6 +301,7 @@ public:
         //                prt(info,"restarting camera %d",index);
         //            }
         //        }
+        cfg_lock.unlock();
     }
     CameraConfiguration *p_cfg;
 private:

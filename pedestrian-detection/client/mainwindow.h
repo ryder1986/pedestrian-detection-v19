@@ -65,7 +65,7 @@ public:
 public slots:
     void get_data(QByteArray rst)
     {
-        prt(info,"get %s",rst.toStdString().data());
+        prt(debug,"get %s",rst.toStdString().data());
 #if 1
         d.rst.clear();
         d.rst=rst;

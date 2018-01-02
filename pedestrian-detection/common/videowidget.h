@@ -119,7 +119,9 @@ protected:
         // makeCurrent();
         QBrush red_brush_trans(QColor(0,0,200,100));
         painter.setBrush(red_brush_trans);
-        painter.drawEllipse(pos_x++%500,pos_y++%500,50,50);
+       // painter.drawEllipse(pos_x++%500,pos_y++%500,50,50);
+        pos_x+=10;
+        painter.drawEllipse(pos_x%300,0,50,50);
 //        foreach (QRect r, rcts) {
 //            painter.drawRect(r);
 //        }

@@ -70,11 +70,12 @@ void MainWindow::on_treeWidget_devices_doubleClicked(const QModelIndex &index)
 
             int now=p_item_device_current->parent()->indexOfChild(p_item_device_current);
             selected_camera_index=now+1;
-            open_camera_output(now);
+
             prt(info,"playing index change to %d",selected_camera_index);
             if(now<p_cfg->cfg.camera_amount){
                 QString url=p_item_device_current->text(0);
                 qDebug()<<"get "<<url;
+                open_camera_output(selected_camera_index);
                 if(p_video_thread)
                  {
 

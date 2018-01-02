@@ -71,12 +71,15 @@ private:
 //                  bool rt=data->vcap.read(mat_rst);
 //                     if(rt) {prt(info,"get   ok");}
 //                     else {prt(info,"get   err");}
+                    prt(info,"query  %s      ",data->url.data());
                   img=cvQueryFrame(data->p_cap);
+                      prt(info,"query %s    done   ",data->url.data());
                    //      prt(info,"get frame done");
                 if(!img){
                     prt(info,"%s get frame error,retry 1 seconds later",data->url.data());
                     cvReleaseCapture(&data->p_cap);
                     this_thread::sleep_for(chrono::seconds(1));
+                    prt(info,"restarting %s      ",data->url.data());
                 }else{
                     Mat(img).copyTo(mat_rst);
                     if(data->frame_list.size()<10){

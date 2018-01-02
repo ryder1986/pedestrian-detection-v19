@@ -109,7 +109,7 @@ public slots:
             QByteArray b_loc=bl[1];
 #else
 
-            prt(info,"get data %s",datagram_rst.data());
+            prt(debug,"get data %s",datagram_rst.data());
             emit send_rst(datagram_rst);
 #endif
 

@@ -43,9 +43,15 @@ public  slots:
         {
             client_msg.resize((udp_skt->pendingDatagramSize()));
             udp_skt->readDatagram(client_msg.data(),client_msg.size());
-            prt(info,"msg :%s",msg=client_msg.data());
-            if(!strcmp(msg,"pedestrian"))
+            QString str=udp_skt->peerAddress().toString();//TODO,why cant I get this address?
+            prt(info,"get client broadcasted code :%s",msg=client_msg.data());
+            if(!strcmp(msg,"pedestrian")){
+                prt(info,"reply client %s with our ip info",str.toStdString().data());
                 send_info_to_client();
+            }
+            else{
+                prt(error,"client code :%s NOT MATCH pedestrian,we will not answer",msg=client_msg.data());
+            }
             //   udp_skt->flush();
         }else{
             //prt(debug,"searching client on port %d",Protocol::SERVER_REPORTER_PORT)
@@ -108,15 +114,36 @@ public:
     }
 
 public slots:
+    void open_output(int index)
+    {
+        focus_index=index;
+    }
+    void close_output()
+    {
+        focus_index=0;
+    }
+    bool camera_foucused()
+    {
+        if(focus_index>0)
+            return true;
+        if(focus_index<0)
+            return false;
+    }
+
     void check_output()
     {
         ProcessedDataSender *sender=ProcessedDataSender::get_instance();
-        CameraManager mgr=  CameraManager::GetInstance();
+        CameraManager &mgr=  CameraManager::GetInstance();
         QByteArray ba;
-        if(focus_index){
+        if(focus_index&&focus_index<=mgr.cam_num()){
             //prt(info,"checking camera %d",focus_index);
             if(mgr.try_get_data(focus_index-1,ba)){
                 sender->send(ba,client_addr);
+            }
+        }else{
+            if(camera_foucused()){
+                prt(info,"close camera %d output",focus_index);
+                close_output();
             }
         }
     }
@@ -138,7 +165,7 @@ public slots:
     int process(char *src_buf,char*dst_buf,int size)
     {
         CameraManager &mgr=CameraManager::GetInstance();
-        prt(info,"handle client cmd");
+        prt(debug,"handle client %s cmd",ip().toStdString().data());
         int client_cmd=Protocol::get_operation(src_buf);
         int pkg_len=Protocol::get_length(src_buf);
         int cam_index=Protocol::get_cam_index(src_buf);
@@ -147,7 +174,7 @@ public slots:
         int ret_size=0;
         switch (client_cmd) {
         case Protocol::ADD_CAMERA:
-            prt(info,"add camera");
+            prt(info,"client %s request add camera",ip().toStdString().data());
             bta.clear();
             bta.append(src_buf+Protocol::HEAD_LENGTH,pkg_len);
             mgr.add_camera(bta.data());
@@ -155,13 +182,13 @@ public slots:
             ret_size= Protocol::HEAD_LENGTH;
             break;
         case  Protocol::GET_CONFIG:
-            prt(info,"get cfg");
+            prt(info,"client %s request fetch configuration",ip().toStdString().data());
             memcpy(dst_buf,src_buf,Protocol::HEAD_LENGTH);
             memcpy(dst_buf+Protocol::HEAD_LENGTH,mgr.p_cfg->get_config().data(),mgr.p_cfg->get_config().size());
             ret_size=mgr.p_cfg->get_config().size()+Protocol::HEAD_LENGTH;
             break;
         case Protocol::DEL_CAMERA:
-            prt(info,"del cam %d ",cam_index);
+            prt(info,"client %s request delete camera %d",ip().toStdString().data(),cam_index);
             mgr.del_camera(cam_index);
             memcpy(dst_buf,src_buf,Protocol::HEAD_LENGTH);
             ret_size= Protocol::HEAD_LENGTH;
@@ -170,10 +197,11 @@ public slots:
             prt(info,"modify cam %d ",cam_index);
             break;
         case Protocol::CAM_OUTPUT_OPEN:
-            prt(info,"cam %d request output",cam_index);
+            prt(info,"client %s request camera %d output data",ip().toStdString().data(),cam_index);
             memcpy(dst_buf,src_buf,Protocol::HEAD_LENGTH);
             ret_size= Protocol::HEAD_LENGTH;
-            focus_index=cam_index;
+          //  focus_index=cam_index;
+            open_output(cam_index);
             //mgr.set_output(cam_index);
             break;
         default:
@@ -230,9 +258,9 @@ public:
         server=new QTcpServer();
         ret=server->listen(QHostAddress::Any,Protocol::SERVER_PORT);
         if(ret){
-            prt(info,"ok to listen on port %d",Protocol::SERVER_PORT);
+            prt(info,"Server listen on port %d success!",Protocol::SERVER_PORT);
         } else {
-            prt(info,"err in listen on port %d",Protocol::SERVER_PORT);
+            prt(fatal,"Server listen on port %d failed!",Protocol::SERVER_PORT);
             exit(1);
         }
         connect(server, &QTcpServer::newConnection, this, &Server::handle_connection);
